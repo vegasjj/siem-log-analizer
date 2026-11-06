@@ -101,6 +101,11 @@ def test_dynamic_analysis_on_sample_excel_without_hardcoding():
         )
     assert resp.status_code == 200
 
-    tech_pdf = client.get("/api/reports/pdf/technical")
-    assert tech_pdf.status_code == 200
-    assert tech_pdf.content.startswith(b"%PDF-")
+    # Verify unified PDF generation (Executive first + Technical second)
+    combined_pdf = client.get("/api/reports/pdf")
+    assert combined_pdf.status_code == 200
+    assert combined_pdf.headers["content-type"] == "application/pdf"
+    assert "Informe_SIEM_Ejecutivo_y_Tecnico_SOC_L2_ES.pdf" in combined_pdf.headers.get("content-disposition", "")
+    assert combined_pdf.content.startswith(b"%PDF-")
+    assert len(combined_pdf.content) > 6000
+

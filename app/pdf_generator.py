@@ -1,8 +1,8 @@
-"""Dual Spanish PDF Report Generator (Executive & Technical SOC Level 2).
+"""Spanish PDF Report Generator (Combined Executive First + Technical SOC Level 2 Second).
 
-Generates two structured, multi-page PDF documents in Spanish using fpdf2:
-1. Informe Ejecutivo (Plain language for executive/board audience)
-2. Informe Técnico SOC Nivel 2 (Complete 8-section technical report for security specialists)
+Generates a single structured, multi-page PDF document in Spanish using fpdf2:
+- Parte I: Informe Ejecutivo (Plain language for executive/board audience)
+- Parte II: Informe Técnico SOC Nivel 2 (Complete 8-section technical report for security specialists)
 """
 
 from pathlib import Path
@@ -78,17 +78,17 @@ class SIEMReportPDF(FPDF):
         self.set_fill_color(15, 23, 42)  # Slate-900
         self.rect(0, 0, 210, 14, style="F")
         self.set_xy(10, 3.5)
-        self.set_font(self.font_family_name, "B", 8.5)
+        self.set_font(self.font_family_name, "B", 8.0)
         self.set_text_color(226, 232, 240)
         self.cell(
-            120,
+            105,
             7,
             self.txt("CONSULTORA DE CIBERSEGURIDAD - ESTOCOLMO, SUECIA | SOC NIVEL 2"),
             align="L",
         )
         self.set_text_color(56, 189, 248)
         self.cell(
-            70,
+            85,
             7,
             self.txt(self.report_type_label),
             align="R",
@@ -146,12 +146,8 @@ class SIEMReportPDF(FPDF):
         self.ln(2)
 
 
-def generate_executive_pdf(analysis: AnalysisResponse) -> bytes:
-    """Generate the Spanish Executive PDF Report in plain language for decision-makers."""
-    pdf = SIEMReportPDF("INFORME EJECUTIVO (ALTA DIRECCIÓN)")
-    pdf.alias_nb_pages()
-    pdf.add_page()
-
+def _render_executive_content(pdf: SIEMReportPDF, analysis: AnalysisResponse):
+    """Render the complete Executive Report section onto the current page of pdf."""
     exec_rep = analysis.executive_report
     m = analysis.metrics
 
@@ -159,15 +155,15 @@ def generate_executive_pdf(analysis: AnalysisResponse) -> bytes:
     pdf.set_fill_color(241, 245, 249)
     pdf.rect(10, 18, 190, 28, style="F")
     pdf.set_xy(14, 21)
-    pdf.set_font(pdf.font_family_name, "B", 15)
+    pdf.set_font(pdf.font_family_name, "B", 14.5)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 8, pdf.txt(exec_rep.report_title), new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 8, pdf.txt(f"PARTE I — {exec_rep.report_title}"), new_x="LMARGIN", new_y="NEXT")
     pdf.set_x(14)
-    pdf.set_font(pdf.font_family_name, "", 9.5)
+    pdf.set_font(pdf.font_family_name, "", 9.2)
     pdf.set_text_color(71, 85, 105)
     pdf.cell(0, 5.5, pdf.txt(exec_rep.subtitle), new_x="LMARGIN", new_y="NEXT")
     pdf.set_x(14)
-    pdf.set_font(pdf.font_family_name, "B", 8.5)
+    pdf.set_font(pdf.font_family_name, "B", 8.2)
     pdf.cell(
         0,
         5.5,
@@ -185,7 +181,7 @@ def generate_executive_pdf(analysis: AnalysisResponse) -> bytes:
     # KPI Summary Box
     pdf.set_fill_color(248, 250, 252)
     pdf.set_draw_color(203, 213, 225)
-    pdf.set_font(pdf.font_family_name, "B", 9)
+    pdf.set_font(pdf.font_family_name, "B", 8.8)
     kpi_line = (
         f"Registros Analizados: {m.total_logs}   |   Incidentes Confirmados: {m.total_incidents} "
         f"({m.critical_incidents_count} Críticos, {m.high_incidents_count} Altos, {m.medium_incidents_count} Medios)   |   "
@@ -246,18 +242,9 @@ def generate_executive_pdf(analysis: AnalysisResponse) -> bytes:
     pdf.section_banner("05", "Recomendaciones Estratégicas de Ciberseguridad")
     pdf.bullet_list(exec_rep.investment_recommendations)
 
-    return bytes(pdf.output())
 
-
-def generate_technical_pdf(analysis: AnalysisResponse) -> bytes:
-    """
-    Generate the complete Spanish Technical SOC Level 2 PDF Report containing all 8
-    mandatory sections specified in Slide 4 ('Contenido del informe técnico').
-    """
-    pdf = SIEMReportPDF("INFORME TÉCNICO FORENSE (SOC NIVEL 2)")
-    pdf.alias_nb_pages()
-    pdf.add_page()
-
+def _render_technical_content(pdf: SIEMReportPDF, analysis: AnalysisResponse):
+    """Render the complete Technical SOC Level 2 Report section onto the current page of pdf."""
     tech = analysis.technical_report
     m = analysis.metrics
 
@@ -265,9 +252,9 @@ def generate_technical_pdf(analysis: AnalysisResponse) -> bytes:
     pdf.set_fill_color(241, 245, 249)
     pdf.rect(10, 18, 190, 28, style="F")
     pdf.set_xy(14, 21)
-    pdf.set_font(pdf.font_family_name, "B", 14)
+    pdf.set_font(pdf.font_family_name, "B", 13.5)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 8, pdf.txt(tech.report_title), new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 8, pdf.txt(f"PARTE II — {tech.report_title}"), new_x="LMARGIN", new_y="NEXT")
     pdf.set_x(14)
     pdf.set_font(pdf.font_family_name, "", 9)
     pdf.set_text_color(71, 85, 105)
@@ -288,7 +275,7 @@ def generate_technical_pdf(analysis: AnalysisResponse) -> bytes:
     pdf.risk_badge("CLASIFICACIÓN DE CRITICIDAD GLOBAL DEL INCIDENTE", tech.global_risk_level)
 
     # 1. Resumen Ejecutivo
-    pdf.section_banner("01", "Resumen Ejecutivo")
+    pdf.section_banner("01", "Resumen Ejecutivo Técnico")
     pdf.paragraph(tech.resumen_ejecutivo)
     pdf.paragraph(f"Nota de Rigor Analítico: {tech.nota_rigor_analitico}", size=8.5, bold=True)
 
@@ -309,11 +296,11 @@ def generate_technical_pdf(analysis: AnalysisResponse) -> bytes:
     pdf.set_font(pdf.font_family_name, "", 7.8)
     pdf.set_text_color(15, 23, 42)
     for inc in analysis.incidents:
-        tw = f"{inc.time_start[11:19]} - {inc.time_end[11:19]}"
+        tw = f"{inc.time_start[11:19]} - {inc.time_end[11:19]}" if len(inc.time_start) >= 19 else inc.time_start
         scope_str = f"Hosts: {', '.join(inc.affected_hosts[:3])} | Users: {', '.join(inc.compromised_users[:2])}"
         pdf.cell(16, 6, pdf.txt(inc.incident_id), border=1)
         pdf.cell(22, 6, pdf.txt(inc.risk_level), border=1)
-        pdf.cell(35, 6, pdf.txt(tw), border=1)
+        pdf.cell(35, 6, pdf.txt(tw[:19]), border=1)
         pdf.cell(18, 6, pdf.txt(f"{inc.total_events} ({inc.hidden_informational_count} Info)"), border=1)
         pdf.cell(99, 6, pdf.txt(scope_str[:62]), border=1, new_x="LMARGIN", new_y="NEXT")
     pdf.ln(3)
@@ -335,7 +322,36 @@ def generate_technical_pdf(analysis: AnalysisResponse) -> bytes:
     pdf.section_banner("08", "Recomendaciones Generales de Seguridad y Arquitectura SOC")
     pdf.bullet_list(tech.recomendaciones_generales)
 
+
+def generate_combined_pdf(analysis: AnalysisResponse) -> bytes:
+    """
+    Generate a single Spanish PDF file containing:
+    1. Executive Report first (Parte I: Informe Ejecutivo para Alta Dirección)
+    2. Technical Report second (Parte II: Informe Técnico Forense SOC Nivel 2)
+    """
+    pdf = SIEMReportPDF("PARTE I: INFORME EJECUTIVO (ALTA DIRECCIÓN)")
+    pdf.alias_nb_pages()
+
+    # Part I: Executive Report
+    pdf.add_page()
+    _render_executive_content(pdf, analysis)
+
+    # Part II: Technical SOC L2 Report (starts on a clean page with updated running header)
+    pdf.report_type_label = "PARTE II: INFORME TÉCNICO FORENSE (SOC NIVEL 2)"
+    pdf.add_page()
+    _render_technical_content(pdf, analysis)
+
     return bytes(pdf.output())
+
+
+def generate_executive_pdf(analysis: AnalysisResponse) -> bytes:
+    """Generate standalone Executive PDF (kept for compatibility; delegates to combined or standalone)."""
+    return generate_combined_pdf(analysis)
+
+
+def generate_technical_pdf(analysis: AnalysisResponse) -> bytes:
+    """Generate standalone Technical PDF (kept for compatibility; delegates to combined or standalone)."""
+    return generate_combined_pdf(analysis)
 
 
 def _render_technical_incident_block(pdf: SIEMReportPDF, inc: IncidentFinding):

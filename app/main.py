@@ -1,6 +1,7 @@
 """FastAPI Web Application Server for SIEM Log Analyzer (SOC Level 2).
 
 Waits for user file upload before generating any analysis, dashboards, or reports.
+Exports both reports (Executive first, Technical second) into a single Spanish PDF file.
 """
 
 from datetime import datetime
@@ -19,15 +20,15 @@ from app.ai_service import (
 )
 from app.excel_parser import parse_siem_excel_bytes
 from app.models import AIConfigRequest, AnalysisResponse
-from app.pdf_generator import generate_executive_pdf, generate_technical_pdf
+from app.pdf_generator import generate_combined_pdf
 
 app = FastAPI(
     title="SIEM Log Analyzer — SOC Nivel 2 (Estocolmo)",
     description=(
         "Plataforma web de análisis dinámico de registros SIEM con "
-        "IA integrada (Microsoft Foundry GPT) y generación dual de informes en PDF (Español)."
+        "IA integrada (Microsoft Foundry GPT) y exportación de informes (Ejecutivo + Técnico) en un único PDF (Español)."
     ),
-    version="2.0.0",
+    version="2.1.0",
 )
 
 app.add_middleware(
@@ -145,61 +146,57 @@ def _require_existing_analysis(payload: Optional[AnalysisResponse] = None) -> An
         return _LATEST_ANALYSIS
     raise HTTPException(
         status_code=400,
-        detail="Primero debe subir y analizar un archivo Excel (.xlsx) antes de generar informes PDF.",
+        detail="Primero debe subir y analizar un archivo Excel (.xlsx) antes de generar el informe PDF.",
+    )
+
+
+@app.post("/api/reports/pdf")
+async def download_combined_pdf_post(payload: Optional[AnalysisResponse] = None):
+    """Generate and download the unified Spanish PDF (Executive Report first + Technical Report second)."""
+    analysis = _require_existing_analysis(payload)
+    pdf_bytes = generate_combined_pdf(analysis)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'attachment; filename="Informe_SIEM_Ejecutivo_y_Tecnico_SOC_L2_ES.pdf"'
+        },
+    )
+
+
+@app.get("/api/reports/pdf")
+async def download_combined_pdf_get():
+    """GET endpoint for direct download of the unified Spanish PDF (Executive first + Technical second)."""
+    analysis = _require_existing_analysis(None)
+    pdf_bytes = generate_combined_pdf(analysis)
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": 'attachment; filename="Informe_SIEM_Ejecutivo_y_Tecnico_SOC_L2_ES.pdf"'
+        },
     )
 
 
 @app.post("/api/reports/pdf/executive")
 async def download_executive_pdf_post(payload: Optional[AnalysisResponse] = None):
-    """Generate and download the Spanish Executive Report in PDF format."""
-    analysis = _require_existing_analysis(payload)
-    pdf_bytes = generate_executive_pdf(analysis)
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": 'attachment; filename="Informe_Ejecutivo_SOC_L2_ES.pdf"'
-        },
-    )
+    """Alias endpoint returning the unified Spanish PDF."""
+    return await download_combined_pdf_post(payload)
 
 
 @app.get("/api/reports/pdf/executive")
 async def download_executive_pdf_get():
-    """GET endpoint for direct browser download of the Spanish Executive Report PDF."""
-    analysis = _require_existing_analysis(None)
-    pdf_bytes = generate_executive_pdf(analysis)
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": 'attachment; filename="Informe_Ejecutivo_SOC_L2_ES.pdf"'
-        },
-    )
+    """Alias endpoint returning the unified Spanish PDF."""
+    return await download_combined_pdf_get()
 
 
 @app.post("/api/reports/pdf/technical")
 async def download_technical_pdf_post(payload: Optional[AnalysisResponse] = None):
-    """Generate and download the Spanish Technical SOC L2 Report in PDF format."""
-    analysis = _require_existing_analysis(payload)
-    pdf_bytes = generate_technical_pdf(analysis)
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": 'attachment; filename="Informe_Tecnico_SOC_L2_ES.pdf"'
-        },
-    )
+    """Alias endpoint returning the unified Spanish PDF."""
+    return await download_combined_pdf_post(payload)
 
 
 @app.get("/api/reports/pdf/technical")
 async def download_technical_pdf_get():
-    """GET endpoint for direct browser download of the Spanish Technical SOC L2 Report PDF."""
-    analysis = _require_existing_analysis(None)
-    pdf_bytes = generate_technical_pdf(analysis)
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={
-            "Content-Disposition": 'attachment; filename="Informe_Tecnico_SOC_L2_ES.pdf"'
-        },
-    )
+    """Alias endpoint returning the unified Spanish PDF."""
+    return await download_combined_pdf_get()

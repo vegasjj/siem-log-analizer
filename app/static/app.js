@@ -719,25 +719,17 @@ function initReportTabHandlers() {
     btnExec.className = "px-3.5 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition";
   });
 
-  document.getElementById("btnDownloadExecPdfTop").addEventListener("click", () => downloadPdfReport("executive"));
-  document.getElementById("btnDownloadTechPdfTop").addEventListener("click", () => downloadPdfReport("technical"));
-  document.getElementById("btnDownloadExecPdfReportTab").addEventListener("click", () => downloadPdfReport("executive"));
-  document.getElementById("btnDownloadTechPdfReportTab").addEventListener("click", () => downloadPdfReport("technical"));
+  document.getElementById("btnDownloadCombinedPdfTop").addEventListener("click", downloadCombinedPdfReport);
+  document.getElementById("btnDownloadCombinedPdfReportTab").addEventListener("click", downloadCombinedPdfReport);
 }
 
-async function downloadPdfReport(type) {
+async function downloadCombinedPdfReport() {
   if (!currentAnalysis) {
     showError("Primero debe subir y analizar un archivo Excel (.xlsx) antes de descargar el PDF.");
     return;
   }
   try {
-    const url = type === "executive" ? "/api/reports/pdf/executive" : "/api/reports/pdf/technical";
-    const filename =
-      type === "executive"
-        ? "Informe_Ejecutivo_SOC_L2_ES.pdf"
-        : "Informe_Tecnico_SOC_L2_ES.pdf";
-
-    const resp = await fetch(url, {
+    const resp = await fetch("/api/reports/pdf", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(currentAnalysis),
@@ -748,7 +740,7 @@ async function downloadPdfReport(type) {
     const blob = await resp.blob();
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = filename;
+    link.download = "Informe_SIEM_Ejecutivo_y_Tecnico_SOC_L2_ES.pdf";
     document.body.appendChild(link);
     link.click();
     link.remove();
