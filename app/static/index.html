@@ -28,25 +28,20 @@
             </span>
           </div>
           <p class="text-xs text-slate-400 hidden sm:block">
-            Correlación Forense de Indicadores de Compromiso (IoC), Clasificación de Riesgos y Generación Dual de Informes PDF
+            Análisis Dinámico con IA (Microsoft Foundry GPT), Dashboard de Seguridad y Generación Dual de Informes PDF
           </p>
         </div>
       </div>
 
       <div class="flex items-center gap-2.5">
         <div id="aiStatusBadge" class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs text-slate-300">
-          <span id="aiStatusDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="aiStatusText">Motor Híbrido SOC L2 Activo</span>
+          <span id="aiStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span id="aiStatusText">Esperando carga de archivo (.xlsx)</span>
         </div>
 
         <button id="btnOpenAiModal" type="button"
-          class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium transition flex items-center gap-1.5">
-          <span>⚙️ Microsoft Foundry IA</span>
-        </button>
-
-        <button id="btnQuickSampleTop" type="button"
           class="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs sm:text-sm font-semibold shadow transition flex items-center gap-1.5">
-          <span>⚡ Analizar Caso de Estudio</span>
+          <span>⚙️ Configurar Microsoft Foundry IA</span>
         </button>
       </div>
     </div>
@@ -55,60 +50,68 @@
   <!-- MAIN CONTENT CONTAINER -->
   <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
 
-    <!-- MISSION & CONTEXT BANNER -->
+    <!-- MISSION & FILE UPLOAD BANNER -->
     <section class="rounded-xl bg-gradient-to-r from-slate-900 via-slate-900 to-sky-950/60 border border-slate-800 p-5 shadow-lg">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-center">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 items-center">
         <div class="lg:col-span-2 space-y-1.5">
           <div class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-sky-400">
             <span>Contexto de Misión — Consultora de Ciberseguridad (Estocolmo, Suecia)</span>
           </div>
           <h2 class="text-xl font-bold text-white">
-            Investigación de Múltiples Incidentes y Correlación Estricta de Registros SIEM
+            Plataforma de Análisis Forense y Correlación Dinámica de Logs SIEM con IA
           </h2>
           <p class="text-sm text-slate-300 leading-relaxed">
-            Importe el archivo Excel (<code class="text-sky-300 font-mono text-xs">.xlsx</code>) exportado del SIEM del cliente para detectar
+            Suba cualquier archivo Excel (<code class="text-sky-300 font-mono text-xs">.xlsx</code>) con registros exportados de un SIEM.
+            Una vez cargado el archivo, el modelo de IA analizará los registros para detectar
             <strong>Fuerza bruta</strong>, <strong>Inicios sospechosos</strong>, <strong>Escalamiento</strong>,
-            <strong>Comandos y procesos</strong>, <strong>Movimiento lateral</strong> y <strong>Otras anomalías</strong>
-            (incluyendo eventos críticos ocultos bajo severidad <em>Informational</em>).
-            Rigor analítico garantizado: cada conclusión cita exactamente los <code class="text-amber-300 font-mono text-xs">Log_ID</code> de evidencia.
+            <strong>Comandos y procesos</strong>, <strong>Movimiento lateral</strong> y <strong>Otras anomalías</strong>,
+            construirá dinámicamente el dashboard interactivo y redactará los dos informes en español (Ejecutivo y Técnico).
           </p>
         </div>
 
         <!-- 01. UPLOAD BOX -->
         <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col justify-between gap-3">
           <div id="dropZone"
-            class="border-2 border-dashed border-slate-700 hover:border-sky-400 rounded-lg p-4 text-center cursor-pointer transition">
+            class="border-2 border-dashed border-slate-700 hover:border-sky-400 rounded-lg p-5 text-center cursor-pointer transition">
             <input id="fileInput" type="file" accept=".xlsx" class="hidden" />
             <p class="text-sm font-semibold text-slate-200">
               📂 Subir archivo SIEM (.xlsx)
             </p>
             <p id="selectedFileLabel" class="text-xs text-slate-400 mt-1">
-              Arrastre su archivo aquí o haga clic para seleccionar
+              Arrastre su archivo .xlsx aquí o haga clic para seleccionar
             </p>
           </div>
-          <div class="flex items-center gap-2">
-            <button id="btnUploadAnalyze" type="button"
-              class="flex-1 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm transition disabled:opacity-40">
-              Analizar Archivo Subido
-            </button>
-            <button id="btnLoadSampleMain" type="button"
-              class="py-2 px-3 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-300 border border-sky-500/40 font-semibold text-xs sm:text-sm transition"
-              title="Cargar SOC_L2_Logs_Ampliados_Multiples_Incidentes.xlsx">
-              Usar Excel del Caso
-            </button>
-          </div>
+          <button id="btnUploadAnalyze" type="button"
+            class="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs sm:text-sm transition shadow">
+            🚀 Analizar Archivo y Generar Dashboard + Informes con IA
+          </button>
         </div>
       </div>
     </section>
 
+    <!-- EMPTY STATE (SHOWN BEFORE ANY FILE IS UPLOADED) -->
+    <section id="emptyStateBanner" class="rounded-2xl bg-slate-900/60 border border-dashed border-slate-800 p-12 text-center space-y-4">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-3xl">
+        📊
+      </div>
+      <div class="max-w-xl mx-auto space-y-2">
+        <h3 class="text-lg font-bold text-white">Esperando Carga de Archivo Excel (.xlsx)</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">
+          No se ha generado ningún dashboard ni informe todavía. Seleccione o arrastre un archivo
+          <code class="text-sky-300 font-mono text-xs">.xlsx</code> con registros del SIEM en el panel superior
+          para iniciar el análisis dinámico con IA.
+        </p>
+      </div>
+    </section>
+
     <!-- LOADING INDICATOR -->
-    <div id="loadingBanner" class="hidden rounded-xl bg-sky-950/60 border border-sky-500/40 p-6 text-center space-y-2">
-      <div class="inline-block w-8 h-8 border-4 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
-      <p class="text-sm font-semibold text-sky-200">
-        Ejecutando motor de correlación forense SOC Nivel 2 y generación de informes con IA...
+    <div id="loadingBanner" class="hidden rounded-xl bg-sky-950/60 border border-sky-500/40 p-8 text-center space-y-3">
+      <div class="inline-block w-9 h-9 border-4 border-sky-400 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-base font-semibold text-sky-200">
+        Analizando registros del archivo Excel con IA y construyendo Dashboard e Informes dinámicamente...
       </p>
       <p class="text-xs text-slate-400">
-        Correlacionando eventos por IP, cuenta, host, procesos y líneas de tiempo sin inventar hallazgos.
+        Correlacionando indicadores de compromiso (IoC), clasificando riesgos y redactando los informes Ejecutivo y Técnico en español.
       </p>
     </div>
 
@@ -118,304 +121,289 @@
       <button onclick="document.getElementById('errorBanner').classList.add('hidden')" class="text-xs underline ml-4">Cerrar</button>
     </div>
 
-    <!-- NAVIGATION TABS FOR SECTIONS -->
-    <nav id="sectionNav" class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
-      <div class="flex flex-wrap gap-2">
-        <button data-tab="tab-dashboard" class="nav-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-sky-600 text-white transition">
-          📊 01. Dashboard y Estadísticas
-        </button>
-        <button data-tab="tab-incidents" class="nav-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
-          🚨 02. Incidentes y Clasificación de Riesgos (<span id="navIncidentCount">0</span>)
-        </button>
-        <button data-tab="tab-logs" class="nav-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
-          🔍 03. Explorador de Logs SIEM (<span id="navLogCount">0</span>)
-        </button>
-        <button data-tab="tab-reports" class="nav-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
-          📑 04. Informes (Ejecutivo y Técnico) + PDF
-        </button>
-      </div>
-
-      <!-- DIRECT PDF EXPORT QUICK BUTTONS -->
-      <div class="flex items-center gap-2">
-        <button id="btnDownloadExecPdfTop" type="button"
-          class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow transition flex items-center gap-1.5">
-          <span>⬇️ PDF Informe Ejecutivo (ES)</span>
-        </button>
-        <button id="btnDownloadTechPdfTop" type="button"
-          class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow transition flex items-center gap-1.5">
-          <span>⬇️ PDF Informe Técnico SOC L2 (ES)</span>
-        </button>
-      </div>
-    </nav>
-
     <!-- =================================================================== -->
-    <!-- TAB 1: DASHBOARD INTERACTIVO                                        -->
+    <!-- DYNAMIC ANALYSIS WORKSPACE (HIDDEN UNTIL FILE IS UPLOADED)          -->
     <!-- =================================================================== -->
-    <section id="tab-dashboard" class="tab-panel space-y-6">
+    <div id="analysisResultsWorkspace" class="hidden space-y-8">
 
-      <!-- KPI ROW -->
-      <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <p class="text-xs text-slate-400 font-medium">Total Registros SIEM</p>
-          <p id="kpiTotalLogs" class="text-2xl font-bold text-white mt-1">—</p>
-          <p id="kpiTimeWindow" class="text-[11px] text-slate-400 mt-1 truncate">Ventana temporal</p>
-        </div>
-
-        <div class="bg-slate-900 border border-rose-500/40 rounded-xl p-4">
-          <p class="text-xs text-rose-300 font-medium">Incidentes Correlacionados</p>
-          <p id="kpiTotalIncidents" class="text-2xl font-bold text-rose-400 mt-1">—</p>
-          <p id="kpiIncidentBreakdown" class="text-[11px] text-slate-300 mt-1">Críticos / Altos / Medios</p>
-        </div>
-
-        <div class="bg-slate-900 border border-amber-500/40 rounded-xl p-4">
-          <p class="text-xs text-amber-300 font-medium">Eventos Sospechosos</p>
-          <p id="kpiSuspiciousLogs" class="text-2xl font-bold text-amber-400 mt-1">—</p>
-          <p class="text-[11px] text-slate-400 mt-1">Sustentados en Log_IDs</p>
-        </div>
-
-        <div class="bg-slate-900 border border-sky-500/40 rounded-xl p-4">
-          <p class="text-xs text-sky-300 font-medium">Ocultos en 'Informational'</p>
-          <p id="kpiHiddenInfo" class="text-2xl font-bold text-sky-400 mt-1">—</p>
-          <p class="text-[11px] text-slate-400 mt-1">Elevados por correlación</p>
-        </div>
-
-        <div class="bg-slate-900 border border-purple-500/40 rounded-xl p-4">
-          <p class="text-xs text-purple-300 font-medium">Activos y Cuentas</p>
-          <p id="kpiAssetsAccounts" class="text-2xl font-bold text-purple-400 mt-1">—</p>
-          <p id="kpiExternalIps" class="text-[11px] text-slate-400 mt-1">IPs externas atacantes</p>
-        </div>
-
-        <div class="bg-slate-900 border border-emerald-500/40 rounded-xl p-4">
-          <p class="text-xs text-emerald-300 font-medium">Volumen Exfiltrado</p>
-          <p id="kpiExfilMb" class="text-2xl font-bold text-emerald-400 mt-1">—</p>
-          <p id="kpiExfilBytes" class="text-[11px] text-slate-400 mt-1">HTTPS POST saliente</p>
-        </div>
-      </div>
-
-      <!-- CHARTS ROW 1 -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-bold text-white">Clasificación de Incidentes por Criticidad</h3>
-            <span class="text-xs text-slate-400">Crítico / Alto / Medio / Bajo</span>
-          </div>
-          <div class="h-64 flex items-center justify-center">
-            <canvas id="chartRiskDistribution"></canvas>
-          </div>
-        </div>
-
-        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-bold text-white">Línea de Tiempo de Eventos SIEM vs Actividad Maliciosa Correlacionada</h3>
-            <span class="text-xs text-slate-400">Intervalos de 15 min</span>
-          </div>
-          <div class="h-64">
-            <canvas id="chartTimeline"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- CHARTS ROW 2 -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-bold text-white">Detecciones por las 6 Categorías Requeridas</h3>
-            <span class="text-xs text-sky-400">Requisitos del Proyecto</span>
-          </div>
-          <div class="h-64">
-            <canvas id="chartCategories"></canvas>
-          </div>
-        </div>
-
-        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-bold text-white">Sistemas Más Afectados (Eventos Sospechosos por Host)</h3>
-            <span class="text-xs text-slate-400">Servidores y Endpoints</span>
-          </div>
-          <div class="h-64">
-            <canvas id="chartAffectedHosts"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- EXECUTIVE QUICK SUMMARY TABLE ON DASHBOARD -->
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <h3 class="text-base font-bold text-white">Matriz Resumen de Incidentes Correlacionados</h3>
-            <p class="text-xs text-slate-400">Haga clic en cualquier incidente para inspeccionar su explicación técnica, evidencias en logs y plan de acción.</p>
-          </div>
-          <button onclick="switchMainTab('tab-incidents')" class="text-xs text-sky-400 hover:underline font-semibold">
-            Ver todos los detalles técnicos →
+      <!-- NAVIGATION TABS FOR SECTIONS -->
+      <nav id="sectionNav" class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+        <div class="flex flex-wrap gap-2">
+          <button data-tab="tab-dashboard" class="nav-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-sky-600 text-white transition">
+            📊 01. Dashboard Dinámico
+          </button>
+          <button data-tab="tab-incidents" class="nav-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
+            🚨 02. Incidentes y Clasificación de Riesgos (<span id="navIncidentCount">0</span>)
+          </button>
+          <button data-tab="tab-logs" class="nav-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
+            🔍 03. Explorador de Logs SIEM (<span id="navLogCount">0</span>)
+          </button>
+          <button data-tab="tab-reports" class="nav-tab-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 transition">
+            📑 04. Informes (Ejecutivo y Técnico) + PDF
           </button>
         </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left border-collapse text-xs sm:text-sm">
-            <thead>
-              <tr class="border-b border-slate-800 text-slate-400 uppercase text-[11px]">
-                <th class="py-2.5 px-3">ID</th>
-                <th class="py-2.5 px-3">Incidente Correlacionado</th>
-                <th class="py-2.5 px-3">Criticidad</th>
-                <th class="py-2.5 px-3">Ventana Temporal</th>
-                <th class="py-2.5 px-3">Sistemas / Cuentas</th>
-                <th class="py-2.5 px-3">Eventos (Ocultos Info)</th>
-                <th class="py-2.5 px-3 text-right">Acción</th>
-              </tr>
-            </thead>
-            <tbody id="dashboardIncidentTableBody" class="divide-y divide-slate-800/70"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
 
-    <!-- =================================================================== -->
-    <!-- TAB 2: INCIDENTES CORRELACIONADOS Y CLASIFICACIÓN DE RIESGOS        -->
-    <!-- =================================================================== -->
-    <section id="tab-incidents" class="tab-panel hidden space-y-5">
-      <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-xl p-4">
-        <div>
-          <h2 class="text-lg font-bold text-white">Hallazgos de Seguridad Correlacionados y Clasificación de Riesgos</h2>
-          <p class="text-xs text-slate-400">
-            Cada hallazgo incluye su clasificación (Crítico, Alto, Medio o Bajo), justificación estricta, mapeo MITRE ATT&CK, evidencias (<code class="font-mono text-sky-300">Log_ID</code>) y Plan de Acción (Investigar, Contener y Remediar).
-          </p>
+        <!-- DIRECT PDF EXPORT QUICK BUTTONS -->
+        <div class="flex items-center gap-2">
+          <button id="btnDownloadExecPdfTop" type="button"
+            class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow transition flex items-center gap-1.5">
+            <span>⬇️ PDF Informe Ejecutivo (ES)</span>
+          </button>
+          <button id="btnDownloadTechPdfTop" type="button"
+            class="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow transition flex items-center gap-1.5">
+            <span>⬇️ PDF Informe Técnico SOC L2 (ES)</span>
+          </button>
         </div>
-        <div class="flex flex-wrap items-center gap-2">
-          <label class="text-xs text-slate-400">Filtrar por Criticidad:</label>
-          <select id="filterIncidentRisk" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
-            <option value="ALL">Todas las Criticidades</option>
-            <option value="Crítico">Crítico</option>
-            <option value="Alto">Alto</option>
-            <option value="Medio">Medio</option>
-            <option value="Bajo">Bajo</option>
-          </select>
+      </nav>
+
+      <!-- TAB 1: DASHBOARD INTERACTIVO -->
+      <section id="tab-dashboard" class="tab-panel space-y-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+            <p class="text-xs text-slate-400 font-medium">Total Registros SIEM</p>
+            <p id="kpiTotalLogs" class="text-2xl font-bold text-white mt-1">—</p>
+            <p id="kpiTimeWindow" class="text-[11px] text-slate-400 mt-1 truncate">Ventana temporal</p>
+          </div>
+
+          <div class="bg-slate-900 border border-rose-500/40 rounded-xl p-4">
+            <p class="text-xs text-rose-300 font-medium">Incidentes Correlacionados</p>
+            <p id="kpiTotalIncidents" class="text-2xl font-bold text-rose-400 mt-1">—</p>
+            <p id="kpiIncidentBreakdown" class="text-[11px] text-slate-300 mt-1">Críticos / Altos / Medios</p>
+          </div>
+
+          <div class="bg-slate-900 border border-amber-500/40 rounded-xl p-4">
+            <p class="text-xs text-amber-300 font-medium">Eventos Sospechosos</p>
+            <p id="kpiSuspiciousLogs" class="text-2xl font-bold text-amber-400 mt-1">—</p>
+            <p class="text-[11px] text-slate-400 mt-1">Sustentados en Log_IDs</p>
+          </div>
+
+          <div class="bg-slate-900 border border-sky-500/40 rounded-xl p-4">
+            <p class="text-xs text-sky-300 font-medium">Ocultos en 'Informational'</p>
+            <p id="kpiHiddenInfo" class="text-2xl font-bold text-sky-400 mt-1">—</p>
+            <p class="text-[11px] text-slate-400 mt-1">Elevados por correlación</p>
+          </div>
+
+          <div class="bg-slate-900 border border-purple-500/40 rounded-xl p-4">
+            <p class="text-xs text-purple-300 font-medium">Activos y Cuentas</p>
+            <p id="kpiAssetsAccounts" class="text-2xl font-bold text-purple-400 mt-1">—</p>
+            <p id="kpiExternalIps" class="text-[11px] text-slate-400 mt-1">IPs externas atacantes</p>
+          </div>
+
+          <div class="bg-slate-900 border border-emerald-500/40 rounded-xl p-4">
+            <p class="text-xs text-emerald-300 font-medium">Volumen Exfiltrado</p>
+            <p id="kpiExfilMb" class="text-2xl font-bold text-emerald-400 mt-1">—</p>
+            <p id="kpiExfilBytes" class="text-[11px] text-slate-400 mt-1">Transferencia saliente</p>
+          </div>
         </div>
-      </div>
 
-      <div id="incidentsContainer" class="space-y-5"></div>
-    </section>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold text-white">Clasificación de Incidentes por Criticidad</h3>
+              <span class="text-xs text-slate-400">Crítico / Alto / Medio / Bajo</span>
+            </div>
+            <div class="h-64 flex items-center justify-center">
+              <canvas id="chartRiskDistribution"></canvas>
+            </div>
+          </div>
 
-    <!-- =================================================================== -->
-    <!-- TAB 3: EXPLORADOR INTERACTIVO DE LOGS SIEM                          -->
-    <!-- =================================================================== -->
-    <section id="tab-logs" class="tab-panel hidden space-y-4">
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
-        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold text-white">Línea de Tiempo de Eventos SIEM vs Actividad Maliciosa Correlacionada</h3>
+              <span class="text-xs text-slate-400">Intervalos de 15 min</span>
+            </div>
+            <div class="h-64">
+              <canvas id="chartTimeline"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold text-white">Detecciones por las 6 Categorías Requeridas</h3>
+              <span class="text-xs text-sky-400">Categorización Dinámica</span>
+            </div>
+            <div class="h-64">
+              <canvas id="chartCategories"></canvas>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-bold text-white">Sistemas Más Afectados (Eventos Sospechosos por Host)</h3>
+              <span class="text-xs text-slate-400">Servidores y Endpoints</span>
+            </div>
+            <div class="h-64">
+              <canvas id="chartAffectedHosts"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 class="text-base font-bold text-white">Matriz Resumen de Incidentes Correlacionados</h3>
+              <p class="text-xs text-slate-400">Haga clic en cualquier incidente para inspeccionar su explicación técnica, evidencias en logs y plan de acción.</p>
+            </div>
+            <button onclick="switchMainTab('tab-incidents')" class="text-xs text-sky-400 hover:underline font-semibold">
+              Ver todos los detalles técnicos →
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 uppercase text-[11px]">
+                  <th class="py-2.5 px-3">ID</th>
+                  <th class="py-2.5 px-3">Incidente Correlacionado</th>
+                  <th class="py-2.5 px-3">Criticidad</th>
+                  <th class="py-2.5 px-3">Ventana Temporal</th>
+                  <th class="py-2.5 px-3">Sistemas / Cuentas</th>
+                  <th class="py-2.5 px-3">Eventos (Ocultos Info)</th>
+                  <th class="py-2.5 px-3 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="dashboardIncidentTableBody" class="divide-y divide-slate-800/70"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: INCIDENTES CORRELACIONADOS Y CLASIFICACIÓN DE RIESGOS -->
+      <section id="tab-incidents" class="tab-panel hidden space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-xl p-4">
           <div>
-            <h2 class="text-lg font-bold text-white">Explorador y Visualizador de Registros SIEM (.xlsx)</h2>
+            <h2 class="text-lg font-bold text-white">Hallazgos de Seguridad Correlacionados y Clasificación de Riesgos</h2>
             <p class="text-xs text-slate-400">
-              Inspeccione los registros originales importados del Excel. Las filas resaltadas en ámbar corresponden a eventos de ataque que tenían severidad cruda <code class="font-mono text-amber-300">Informational</code> y fueron descubiertos por correlación.
+              Cada hallazgo incluye su clasificación (Crítico, Alto, Medio o Bajo), justificación estricta, mapeo MITRE ATT&CK, evidencias (<code class="font-mono text-sky-300">Log_ID</code>) y Plan de Acción (Investigar, Contener y Remediar).
             </p>
           </div>
-          <button id="btnResetLogFilters" type="button"
-            class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700">
-            Restablecer Filtros
-          </button>
-        </div>
-
-        <!-- FILTER CONTROLS -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          <input id="logSearchInput" type="text" placeholder="Buscar Log_ID, IP, comando, usuario..."
-            class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500" />
-
-          <select id="logFilterMode" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
-            <option value="ALL">Todos los registros</option>
-            <option value="SUSPICIOUS">🚨 Solo Eventos Sospechosos Correlacionados</option>
-            <option value="ELEVATED">⚠️ Solo 'Informational' Ocultos Descubiertos</option>
-          </select>
-
-          <select id="logFilterIncident" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
-            <option value="ALL">Todos los Incidentes</option>
-          </select>
-
-          <select id="logFilterSeverity" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
-            <option value="ALL">Todas las Severidades Crudas</option>
-            <option value="High">High</option>
-            <option value="Medium">Medium</option>
-            <option value="Warning">Warning</option>
-            <option value="Informational">Informational</option>
-          </select>
-
-          <select id="logFilterHost" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
-            <option value="ALL">Todos los Sistemas (Hostname)</option>
-          </select>
-        </div>
-
-        <!-- PAGINATION & COUNT BAR -->
-        <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 pt-1">
-          <span id="logTableStatusText">Mostrando 0 de 0 registros</span>
-          <div class="flex items-center gap-2">
-            <button id="btnPrevPage" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40">Anterior</button>
-            <span id="logPageIndicator" class="font-mono">Página 1 / 1</span>
-            <button id="btnNextPage" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40">Siguiente</button>
+          <div class="flex flex-wrap items-center gap-2">
+            <label class="text-xs text-slate-400">Filtrar por Criticidad:</label>
+            <select id="filterIncidentRisk" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white">
+              <option value="ALL">Todas las Criticidades</option>
+              <option value="Crítico">Crítico</option>
+              <option value="Alto">Alto</option>
+              <option value="Medio">Medio</option>
+              <option value="Bajo">Bajo</option>
+            </select>
           </div>
         </div>
 
-        <!-- LOG TABLE -->
-        <div class="overflow-x-auto border border-slate-800 rounded-lg">
-          <table class="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr class="bg-slate-950 border-b border-slate-800 text-slate-400 uppercase text-[11px]">
-                <th class="py-2.5 px-2.5">Log_ID</th>
-                <th class="py-2.5 px-2.5">Timestamp</th>
-                <th class="py-2.5 px-2.5">Host</th>
-                <th class="py-2.5 px-2.5">Event_ID</th>
-                <th class="py-2.5 px-2.5">Usuario</th>
-                <th class="py-2.5 px-2.5">Origen → Destino</th>
-                <th class="py-2.5 px-2.5">Descripción / Proceso / URI</th>
-                <th class="py-2.5 px-2.5">Severidad</th>
-                <th class="py-2.5 px-2.5">Incidente</th>
-              </tr>
-            </thead>
-            <tbody id="logTableBody" class="divide-y divide-slate-800/60 font-mono text-[11px]"></tbody>
-          </table>
-        </div>
-      </div>
-    </section>
+        <div id="incidentsContainer" class="space-y-5"></div>
+      </section>
 
-    <!-- =================================================================== -->
-    <!-- TAB 4: INFORMES (EJECUTIVO Y TÉCNICO SOC L2) + DESCARGA PDF         -->
-    <!-- =================================================================== -->
-    <section id="tab-reports" class="tab-panel hidden space-y-6">
-
-      <!-- REPORT SELECTOR & PDF DOWNLOAD HEADER -->
-      <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div class="space-y-1">
-          <h2 class="text-lg font-bold text-white">Generación Dual de Informes en Español y Exportación PDF</h2>
-          <p class="text-xs text-slate-400">
-            Seleccione la audiencia del informe para previsualizarlo en pantalla o descargue directamente los documentos PDF formateados en español.
-          </p>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800">
-            <button id="btnViewExecReport" type="button"
-              class="px-3.5 py-1.5 rounded-md text-xs font-semibold bg-amber-600 text-white transition">
-              👔 Audiencia Ejecutiva (Lenguaje Claro)
-            </button>
-            <button id="btnViewTechReport" type="button"
-              class="px-3.5 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition">
-              🛡️ Audiencia Técnica SOC L2 (8 Secciones)
+      <!-- TAB 3: EXPLORADOR INTERACTIVO DE LOGS SIEM -->
+      <section id="tab-logs" class="tab-panel hidden space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 class="text-lg font-bold text-white">Explorador y Visualizador de Registros SIEM (.xlsx)</h2>
+              <p class="text-xs text-slate-400">
+                Inspeccione los registros originales importados del archivo Excel cargado.
+              </p>
+            </div>
+            <button id="btnResetLogFilters" type="button"
+              class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 border border-slate-700">
+              Restablecer Filtros
             </button>
           </div>
 
-          <button id="btnDownloadExecPdfReportTab" type="button"
-            class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs sm:text-sm font-bold shadow transition">
-            ⬇️ Descargar PDF Ejecutivo (ES)
-          </button>
-          <button id="btnDownloadTechPdfReportTab" type="button"
-            class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-bold shadow transition">
-            ⬇️ Descargar PDF Técnico SOC L2 (ES)
-          </button>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            <input id="logSearchInput" type="text" placeholder="Buscar Log_ID, IP, comando, usuario..."
+              class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500" />
+
+            <select id="logFilterMode" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+              <option value="ALL">Todos los registros</option>
+              <option value="SUSPICIOUS">🚨 Solo Eventos Sospechosos Correlacionados</option>
+              <option value="ELEVATED">⚠️ Solo 'Informational' Ocultos Descubiertos</option>
+            </select>
+
+            <select id="logFilterIncident" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+              <option value="ALL">Todos los Incidentes</option>
+            </select>
+
+            <select id="logFilterSeverity" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+              <option value="ALL">Todas las Severidades Crudas</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Warning">Warning</option>
+              <option value="Informational">Informational</option>
+            </select>
+
+            <select id="logFilterHost" class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+              <option value="ALL">Todos los Sistemas (Hostname)</option>
+            </select>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400 pt-1">
+            <span id="logTableStatusText">Mostrando 0 de 0 registros</span>
+            <div class="flex items-center gap-2">
+              <button id="btnPrevPage" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40">Anterior</button>
+              <span id="logPageIndicator" class="font-mono">Página 1 / 1</span>
+              <button id="btnNextPage" class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 disabled:opacity-40">Siguiente</button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto border border-slate-800 rounded-lg">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-950 border-b border-slate-800 text-slate-400 uppercase text-[11px]">
+                  <th class="py-2.5 px-2.5">Log_ID</th>
+                  <th class="py-2.5 px-2.5">Timestamp</th>
+                  <th class="py-2.5 px-2.5">Host</th>
+                  <th class="py-2.5 px-2.5">Event_ID</th>
+                  <th class="py-2.5 px-2.5">Usuario</th>
+                  <th class="py-2.5 px-2.5">Origen → Destino</th>
+                  <th class="py-2.5 px-2.5">Descripción / Proceso / URI</th>
+                  <th class="py-2.5 px-2.5">Severidad</th>
+                  <th class="py-2.5 px-2.5">Incidente</th>
+                </tr>
+              </thead>
+              <tbody id="logTableBody" class="divide-y divide-slate-800/60 font-mono text-[11px]"></tbody>
+            </table>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <!-- EXECUTIVE REPORT PREVIEW -->
-      <div id="previewExecutiveReport" class="report-paper rounded-2xl p-6 sm:p-8 space-y-6"></div>
+      <!-- TAB 4: INFORMES (EJECUTIVO Y TÉCNICO SOC L2) + DESCARGA PDF -->
+      <section id="tab-reports" class="tab-panel hidden space-y-6">
+        <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div class="space-y-1">
+            <h2 class="text-lg font-bold text-white">Generación Dual de Informes en Español y Exportación PDF</h2>
+            <p class="text-xs text-slate-400">
+              Seleccione la audiencia del informe para previsualizarlo en pantalla o descargue directamente los documentos PDF formateados en español.
+            </p>
+          </div>
 
-      <!-- TECHNICAL REPORT PREVIEW -->
-      <div id="previewTechnicalReport" class="report-paper rounded-2xl p-6 sm:p-8 space-y-6 hidden"></div>
+          <div class="flex flex-wrap items-center gap-3">
+            <div class="inline-flex rounded-lg bg-slate-950 p-1 border border-slate-800">
+              <button id="btnViewExecReport" type="button"
+                class="px-3.5 py-1.5 rounded-md text-xs font-semibold bg-amber-600 text-white transition">
+                👔 Audiencia Ejecutiva (Lenguaje Claro)
+              </button>
+              <button id="btnViewTechReport" type="button"
+                class="px-3.5 py-1.5 rounded-md text-xs font-semibold text-slate-300 hover:text-white transition">
+                🛡️ Audiencia Técnica SOC L2 (8 Secciones)
+              </button>
+            </div>
 
-    </section>
+            <button id="btnDownloadExecPdfReportTab" type="button"
+              class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs sm:text-sm font-bold shadow transition">
+              ⬇️ Descargar PDF Ejecutivo (ES)
+            </button>
+            <button id="btnDownloadTechPdfReportTab" type="button"
+              class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs sm:text-sm font-bold shadow transition">
+              ⬇️ Descargar PDF Técnico SOC L2 (ES)
+            </button>
+          </div>
+        </div>
+
+        <div id="previewExecutiveReport" class="report-paper rounded-2xl p-6 sm:p-8 space-y-6"></div>
+        <div id="previewTechnicalReport" class="report-paper rounded-2xl p-6 sm:p-8 space-y-6 hidden"></div>
+      </section>
+
+    </div>
 
   </main>
 
@@ -459,7 +447,7 @@
         <div class="flex items-center gap-2 pt-1">
           <input id="inputUseAi" type="checkbox" checked class="rounded bg-slate-950 border-slate-700 text-sky-500" />
           <label for="inputUseAi" class="text-slate-300">
-            Habilitar enriquecimiento narrativo con Microsoft Foundry GPT al analizar archivos
+            Usar Microsoft Foundry GPT para correlacionar hallazgos y redactar informes
           </label>
         </div>
 
@@ -474,7 +462,7 @@
         <div class="flex items-center gap-2">
           <button id="btnSaveAiConfig" type="button"
             class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold">
-            Guardar y Re-Analizar
+            Guardar Configuración
           </button>
         </div>
       </div>

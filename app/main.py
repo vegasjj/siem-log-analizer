@@ -1,4 +1,7 @@
-"""FastAPI Web Application Server for SIEM Log Analyzer (SOC Level 2)."""
+"""FastAPI Web Application Server for SIEM Log Analyzer (SOC Level 2).
+
+Waits for user file upload before generating any analysis, dashboards, or reports.
+"""
 
 from datetime import datetime
 from pathlib import Path
@@ -10,22 +13,21 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.ai_service import (
-    enrich_analysis_with_foundry,
     resolve_foundry_config,
+    run_dynamic_siem_analysis,
     test_foundry_connection,
 )
-from app.analyzer import correlate_siem_logs
-from app.excel_parser import get_sample_excel_path, parse_siem_excel_bytes
+from app.excel_parser import parse_siem_excel_bytes
 from app.models import AIConfigRequest, AnalysisResponse
 from app.pdf_generator import generate_executive_pdf, generate_technical_pdf
 
 app = FastAPI(
     title="SIEM Log Analyzer — SOC Nivel 2 (Estocolmo)",
     description=(
-        "Plataforma web de análisis forense y correlación de registros SIEM con "
+        "Plataforma web de análisis dinámico de registros SIEM con "
         "IA integrada (Microsoft Foundry GPT) y generación dual de informes en PDF (Español)."
     ),
-    version="1.0.0",
+    version="2.0.0",
 )
 
 app.add_middleware(
@@ -40,7 +42,7 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# In-memory store of the most recent analysis for instant GET/POST PDF downloads
+# Stores the latest analysis ONLY after a file has been uploaded by the user
 _LATEST_ANALYSIS: Optional[AnalysisResponse] = None
 
 
@@ -49,13 +51,12 @@ def _run_full_pipeline(
     filename: str,
     ai_config: Optional[AIConfigRequest] = None,
 ) -> AnalysisResponse:
-    """Execute Excel parsing, deterministic correlation, and Microsoft Foundry GPT enrichment."""
+    """Execute Excel parsing and dynamic AI-driven correlation, dashboard & report generation."""
     global _LATEST_ANALYSIS
 
     logs = parse_siem_excel_bytes(file_bytes, filename=filename)
-    incidents, metrics, exec_report, tech_report = correlate_siem_logs(logs)
-    incidents, exec_report, tech_report, ai_mode, ai_model = enrich_analysis_with_foundry(
-        incidents, metrics, exec_report, tech_report, config_req=ai_config
+    incidents, metrics, exec_report, tech_report, ai_mode, ai_model = run_dynamic_siem_analysis(
+        logs, config_req=ai_config
     )
 
     analyzed_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -85,7 +86,7 @@ async def serve_index():
 
 @app.get("/api/ai-config/status")
 async def get_ai_config_status():
-    """Return current Microsoft Foundry configuration status (without exposing raw API keys)."""
+    """Return current Microsoft Foundry configuration status."""
     cfg = resolve_foundry_config()
     has_creds = bool(cfg["endpoint"] and cfg["api_key"])
     return {
@@ -111,7 +112,7 @@ async def analyze_uploaded_excel(
     api_version: Optional[str] = Form(default=None),
     use_ai: bool = Form(default=True),
 ):
-    """Upload and analyze a SIEM .xlsx file."""
+    """Upload and dynamically analyze any SIEM .xlsx file."""
     filename = file.filename or "siem_export.xlsx"
     if not filename.lower().endswith(".xlsx"):
         raise HTTPException(
@@ -136,34 +137,22 @@ async def analyze_uploaded_excel(
         ) from exc
 
 
-@app.post("/api/analyze-sample", response_model=AnalysisResponse)
-async def analyze_sample_excel(config_req: Optional[AIConfigRequest] = None):
-    """Load and analyze the bundled SOC_L2_Logs_Ampliados_Multiples_Incidentes.xlsx file."""
-    try:
-        sample_path, sample_name = get_sample_excel_path()
-        file_bytes = sample_path.read_bytes()
-        return _run_full_pipeline(file_bytes, sample_name, ai_config=config_req)
-    except Exception as exc:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error al analizar el archivo del caso de estudio: {exc}",
-        ) from exc
-
-
-def _get_or_create_analysis(payload: Optional[AnalysisResponse] = None) -> AnalysisResponse:
-    global _LATEST_ANALYSIS
+def _require_existing_analysis(payload: Optional[AnalysisResponse] = None) -> AnalysisResponse:
+    """Require that a file has already been uploaded and analyzed before generating PDFs."""
     if payload is not None:
         return payload
     if _LATEST_ANALYSIS is not None:
         return _LATEST_ANALYSIS
-    sample_path, sample_name = get_sample_excel_path()
-    return _run_full_pipeline(sample_path.read_bytes(), sample_name)
+    raise HTTPException(
+        status_code=400,
+        detail="Primero debe subir y analizar un archivo Excel (.xlsx) antes de generar informes PDF.",
+    )
 
 
 @app.post("/api/reports/pdf/executive")
 async def download_executive_pdf_post(payload: Optional[AnalysisResponse] = None):
     """Generate and download the Spanish Executive Report in PDF format."""
-    analysis = _get_or_create_analysis(payload)
+    analysis = _require_existing_analysis(payload)
     pdf_bytes = generate_executive_pdf(analysis)
     return Response(
         content=pdf_bytes,
@@ -177,7 +166,7 @@ async def download_executive_pdf_post(payload: Optional[AnalysisResponse] = None
 @app.get("/api/reports/pdf/executive")
 async def download_executive_pdf_get():
     """GET endpoint for direct browser download of the Spanish Executive Report PDF."""
-    analysis = _get_or_create_analysis(None)
+    analysis = _require_existing_analysis(None)
     pdf_bytes = generate_executive_pdf(analysis)
     return Response(
         content=pdf_bytes,
@@ -191,7 +180,7 @@ async def download_executive_pdf_get():
 @app.post("/api/reports/pdf/technical")
 async def download_technical_pdf_post(payload: Optional[AnalysisResponse] = None):
     """Generate and download the Spanish Technical SOC L2 Report in PDF format."""
-    analysis = _get_or_create_analysis(payload)
+    analysis = _require_existing_analysis(payload)
     pdf_bytes = generate_technical_pdf(analysis)
     return Response(
         content=pdf_bytes,
@@ -205,7 +194,7 @@ async def download_technical_pdf_post(payload: Optional[AnalysisResponse] = None
 @app.get("/api/reports/pdf/technical")
 async def download_technical_pdf_get():
     """GET endpoint for direct browser download of the Spanish Technical SOC L2 Report PDF."""
-    analysis = _get_or_create_analysis(None)
+    analysis = _require_existing_analysis(None)
     pdf_bytes = generate_technical_pdf(analysis)
     return Response(
         content=pdf_bytes,

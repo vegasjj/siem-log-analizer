@@ -1,7 +1,8 @@
 /**
  * SIEM Log Analyzer — SOC Level 2 Frontend Controller
- * Handles Excel upload, interactive Chart.js dashboard rendering,
- * correlated incident inspection, log explorer filtering, and Spanish PDF exports.
+ * Starts in a clean empty state waiting for the user to upload an .xlsx file.
+ * Once uploaded, uses AI (Microsoft Foundry GPT) to dynamically generate the
+ * dashboard, correlated incidents, and dual Spanish PDF reports.
  */
 
 let currentAnalysis = null;
@@ -31,10 +32,27 @@ document.addEventListener("DOMContentLoaded", () => {
   initLogExplorerHandlers();
   initReportTabHandlers();
   initAiModalHandlers();
-
-  // Auto-load the bundled case study Excel file on startup so the dashboard is immediately populated
-  analyzeSampleDataset();
+  checkBackendAiStatus();
 });
+
+async function checkBackendAiStatus() {
+  try {
+    const resp = await fetch("/api/ai-config/status");
+    if (!resp.ok) return;
+    const status = await resp.json();
+    const dot = document.getElementById("aiStatusDot");
+    const txt = document.getElementById("aiStatusText");
+    if (status.configured || (aiConfig.endpoint && aiConfig.api_key)) {
+      dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+      txt.textContent = `Microsoft Foundry IA Listo (${aiConfig.deployment_name || status.deployment_name}) — Esperando archivo`;
+    } else {
+      dot.className = "w-2 h-2 rounded-full bg-amber-400";
+      txt.textContent = "Esperando archivo .xlsx (Configura Microsoft Foundry IA)";
+    }
+  } catch (_) {
+    // Ignore status check error on boot
+  }
+}
 
 /* =========================================================================
  * NAVIGATION TABS
@@ -66,7 +84,7 @@ function switchMainTab(tabId) {
 }
 
 /* =========================================================================
- * UPLOAD & SAMPLE LOAD HANDLERS
+ * UPLOAD HANDLERS (WAITS FOR USER UPLOAD)
  * ========================================================================= */
 function initUploadHandlers() {
   const dropZone = document.getElementById("dropZone");
@@ -90,27 +108,24 @@ function initUploadHandlers() {
     dropZone.classList.remove("dropzone-active");
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       fileInput.files = e.dataTransfer.files;
-      fileLabel.textContent = `Seleccionado: ${fileInput.files[0].name}`;
+      fileLabel.textContent = `Archivo seleccionado: ${fileInput.files[0].name}`;
       uploadAndAnalyzeFile(fileInput.files[0]);
     }
   });
 
   fileInput.addEventListener("change", () => {
     if (fileInput.files && fileInput.files.length > 0) {
-      fileLabel.textContent = `Seleccionado: ${fileInput.files[0].name}`;
+      fileLabel.textContent = `Archivo seleccionado: ${fileInput.files[0].name}`;
     }
   });
 
   btnUpload.addEventListener("click", () => {
     if (!fileInput.files || fileInput.files.length === 0) {
-      showError("Por favor seleccione primero un archivo Excel (.xlsx) o haga clic en 'Usar Excel del Caso'.");
+      showError("Por favor seleccione primero un archivo Excel (.xlsx) para iniciar el análisis.");
       return;
     }
     uploadAndAnalyzeFile(fileInput.files[0]);
   });
-
-  document.getElementById("btnLoadSampleMain").addEventListener("click", analyzeSampleDataset);
-  document.getElementById("btnQuickSampleTop").addEventListener("click", analyzeSampleDataset);
 }
 
 async function uploadAndAnalyzeFile(file) {
@@ -142,37 +157,20 @@ async function uploadAndAnalyzeFile(file) {
   }
 }
 
-async function analyzeSampleDataset() {
-  setLoading(true);
-  hideError();
-  try {
-    const resp = await fetch("/api/analyze-sample", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(aiConfig),
-    });
-    if (!resp.ok) {
-      const errData = await resp.json().catch(() => ({}));
-      throw new Error(errData.detail || `Error HTTP ${resp.status}`);
-    }
-    const data = await resp.json();
-    document.getElementById("selectedFileLabel").textContent = `Activo: ${data.filename}`;
-    renderFullAnalysis(data);
-  } catch (err) {
-    showError(err.message || "Error al cargar el archivo del caso de estudio.");
-  } finally {
-    setLoading(false);
-  }
-}
-
 /* =========================================================================
- * MASTER RENDER PIPELINE
+ * MASTER RENDER PIPELINE (CALLED ONLY AFTER FILE UPLOAD)
  * ========================================================================= */
 function renderFullAnalysis(data) {
   currentAnalysis = data;
 
+  // Hide empty state and reveal the dynamic workspace
+  document.getElementById("emptyStateBanner").classList.add("hidden");
+  document.getElementById("analysisResultsWorkspace").classList.remove("hidden");
+
   // Update AI Status Badge
+  const aiStatusDot = document.getElementById("aiStatusDot");
   const aiStatusText = document.getElementById("aiStatusText");
+  aiStatusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
   aiStatusText.textContent = data.ai_mode_used;
 
   // Update Tab Counters
@@ -194,7 +192,9 @@ function renderFullAnalysis(data) {
  * ========================================================================= */
 function renderDashboardKPIs(m) {
   document.getElementById("kpiTotalLogs").textContent = m.total_logs.toLocaleString("es-ES");
-  document.getElementById("kpiTimeWindow").textContent = `${m.time_range_start.slice(11, 16)} – ${m.time_range_end.slice(11, 16)} (2026-10-23)`;
+  const startStr = m.time_range_start ? m.time_range_start.slice(0, 16) : "";
+  const endStr = m.time_range_end ? m.time_range_end.slice(11, 16) : "";
+  document.getElementById("kpiTimeWindow").textContent = `${startStr} – ${endStr}`;
 
   document.getElementById("kpiTotalIncidents").textContent = m.total_incidents;
   document.getElementById("kpiIncidentBreakdown").textContent =
@@ -205,14 +205,13 @@ function renderDashboardKPIs(m) {
   document.getElementById("kpiAssetsAccounts").textContent =
     `${m.compromised_hosts_count} Hosts / ${m.compromised_accounts_count} Cuentas`;
   document.getElementById("kpiExternalIps").textContent =
-    `${m.external_attacker_ips_count} IPs externas maliciosas`;
+    `${m.external_attacker_ips_count} IPs externas detectadas`;
   document.getElementById("kpiExfilMb").textContent = `${m.total_exfiltrated_mb} MB`;
   document.getElementById("kpiExfilBytes").textContent =
-    `${m.total_exfiltrated_bytes.toLocaleString("es-ES")} bytes (Proxy HTTPS)`;
+    `${m.total_exfiltrated_bytes.toLocaleString("es-ES")} bytes salientes`;
 }
 
 function renderDashboardCharts(m) {
-  // 1. Risk Distribution Doughnut Chart
   const ctxRisk = document.getElementById("chartRiskDistribution").getContext("2d");
   if (chartRisk) chartRisk.destroy();
   chartRisk = new Chart(ctxRisk, {
@@ -245,7 +244,6 @@ function renderDashboardCharts(m) {
     },
   });
 
-  // 2. Timeline Chart
   const ctxTime = document.getElementById("chartTimeline").getContext("2d");
   if (chartTimeline) chartTimeline.destroy();
   const labelsTime = m.timeline_buckets.map((b) => b.time);
@@ -290,7 +288,6 @@ function renderDashboardCharts(m) {
     },
   });
 
-  // 3. Required Categories Horizontal Bar Chart
   const ctxCat = document.getElementById("chartCategories").getContext("2d");
   if (chartCategories) chartCategories.destroy();
   const catLabels = Object.keys(m.events_by_category);
@@ -330,7 +327,6 @@ function renderDashboardCharts(m) {
     },
   });
 
-  // 4. Affected Hosts Bar Chart
   const ctxHosts = document.getElementById("chartAffectedHosts").getContext("2d");
   if (chartHosts) chartHosts.destroy();
   const hostLabels = Object.keys(m.top_affected_hosts);
@@ -377,7 +373,7 @@ function renderDashboardIncidentTable(incidents) {
         <div class="text-xs text-slate-400 mt-0.5">${inc.categories.map((c) => `<span class="inline-block mr-1.5 text-sky-300">#${escapeHtml(c)}</span>`).join("")}</div>
       </td>
       <td class="py-3 px-3">${getRiskBadgeHtml(inc.risk_level)}</td>
-      <td class="py-3 px-3 font-mono text-xs text-slate-300">${escapeHtml(inc.time_start.slice(11, 19))} – ${escapeHtml(inc.time_end.slice(11, 19))}</td>
+      <td class="py-3 px-3 font-mono text-xs text-slate-300">${escapeHtml(inc.time_start)} – ${escapeHtml(inc.time_end)}</td>
       <td class="py-3 px-3 text-xs text-slate-300">
         <div><strong>Hosts:</strong> ${escapeHtml(inc.affected_hosts.join(", "))}</div>
         <div class="text-slate-400"><strong>Cuentas:</strong> ${escapeHtml(inc.compromised_users.slice(0, 3).join(", "))}</div>
@@ -468,11 +464,10 @@ function renderIncidentCards(incidents) {
 
         <button onclick="filterLogsByIncident('${inc.incident_id}')"
           class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 text-xs font-semibold transition">
-          🔍 Ver los ${inc.total_events} registros en Explorador
+          🔍 Ver registros en Explorador
         </button>
       </div>
 
-      <!-- JUSTIFICACIÓN DE CRITICIDAD -->
       <div class="rounded-xl bg-slate-950/90 border border-slate-800 p-4 space-y-1.5">
         <div class="text-xs font-bold uppercase tracking-wider text-amber-400">
           Clasificación de Riesgo (${escapeHtml(inc.risk_level)}) — Justificación Estricta
@@ -480,7 +475,6 @@ function renderIncidentCards(incidents) {
         <p class="text-xs sm:text-sm text-slate-200 leading-relaxed">${escapeHtml(inc.justification)}</p>
       </div>
 
-      <!-- EXPLICACIÓN TÉCNICA Y EJECUTIVA -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div class="rounded-xl bg-slate-950/60 border border-slate-800/80 p-4 space-y-2">
           <div class="text-xs font-bold uppercase tracking-wider text-sky-400">Explicación Técnica Forense (SOC Nivel 2)</div>
@@ -489,7 +483,7 @@ function renderIncidentCards(incidents) {
 
         <div class="rounded-xl bg-slate-950/60 border border-slate-800/80 p-4 space-y-3">
           <div>
-            <div class="text-xs font-bold uppercase tracking-wider text-emerald-400">Traductor Ejecutivo (Lenguaje Claro e Impacto)</div>
+            <div class="text-xs font-bold uppercase tracking-wider text-emerald-400">Resumen Ejecutivo (Lenguaje Claro e Impacto)</div>
             <p class="text-xs text-slate-300 mt-1 leading-relaxed">${escapeHtml(inc.summary_plain_language)}</p>
             <p class="text-xs text-amber-200/90 mt-1.5 font-medium">${escapeHtml(inc.business_impact)}</p>
           </div>
@@ -502,7 +496,6 @@ function renderIncidentCards(incidents) {
         </div>
       </div>
 
-      <!-- PLAN DE ACCIÓN: INVESTIGAR, CONTENER Y REMEDIAR -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div class="rounded-xl bg-sky-950/25 border border-sky-500/30 p-3.5">
           <div class="text-xs font-bold text-sky-300 uppercase mb-1.5">1. Investigar</div>
@@ -524,11 +517,10 @@ function renderIncidentCards(incidents) {
         </div>
       </div>
 
-      <!-- EVIDENCIAS EN LOS LOGS -->
       <div class="space-y-2">
         <div class="flex items-center justify-between">
           <span class="text-xs font-bold uppercase tracking-wider text-slate-400">
-            Evidencias Encontradas en los Logs (Muestra representativa de ${inc.evidence_logs.length} de ${inc.total_events} registros)
+            Evidencias Encontradas en los Logs (${inc.evidence_logs.length} de ${inc.total_events} registros mostrados)
           </span>
           <span class="text-[11px] font-mono text-slate-400">
             Log_IDs: ${escapeHtml(inc.evidence_log_ids.slice(0, 8).join(", "))}${inc.evidence_log_ids.length > 8 ? ` (+${inc.evidence_log_ids.length - 8} más)` : ""}
@@ -734,6 +726,10 @@ function initReportTabHandlers() {
 }
 
 async function downloadPdfReport(type) {
+  if (!currentAnalysis) {
+    showError("Primero debe subir y analizar un archivo Excel (.xlsx) antes de descargar el PDF.");
+    return;
+  }
   try {
     const url = type === "executive" ? "/api/reports/pdf/executive" : "/api/reports/pdf/technical";
     const filename =
@@ -744,7 +740,7 @@ async function downloadPdfReport(type) {
     const resp = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: currentAnalysis ? JSON.stringify(currentAnalysis) : null,
+      body: JSON.stringify(currentAnalysis),
     });
     if (!resp.ok) {
       throw new Error(`No se pudo generar el PDF (${resp.status})`);
@@ -965,7 +961,13 @@ function initAiModalHandlers() {
     localStorage.setItem("foundry_api_version", aiConfig.api_version);
     localStorage.setItem("foundry_use_ai", String(aiConfig.use_ai));
     modal.classList.add("hidden");
-    analyzeSampleDataset();
+    checkBackendAiStatus();
+
+    // Re-analyze if the user already uploaded a file
+    const fileInput = document.getElementById("fileInput");
+    if (fileInput.files && fileInput.files.length > 0) {
+      uploadAndAnalyzeFile(fileInput.files[0]);
+    }
   });
 }
 
