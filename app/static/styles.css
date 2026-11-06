@@ -1,0 +1,74 @@
+/* Custom SOC Level 2 Cyber Operations Dark Theme Styles */
+
+:root {
+  --bg-primary: #0b1120;
+  --bg-card: #111827;
+  --bg-card-hover: #1e293b;
+  --border-subtle: #1e293b;
+  --accent-cyan: #38bdf8;
+  --risk-critico: #ef4444;
+  --risk-alto: #f59e0b;
+  --risk-medio: #0ea5e9;
+  --risk-bajo: #22c55e;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: #f1f5f9;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #0f172a;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+.dropzone-active {
+  border-color: #38bdf8 !important;
+  background-color: rgba(56, 189, 248, 0.08) !important;
+}
+
+.badge-critico {
+  background-color: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.45);
+}
+.badge-alto {
+  background-color: rgba(245, 158, 11, 0.18);
+  color: #fcd34d;
+  border: 1px solid rgba(245, 158, 11, 0.45);
+}
+.badge-medio {
+  background-color: rgba(14, 165, 233, 0.18);
+  color: #7dd3fc;
+  border: 1px solid rgba(14, 165, 233, 0.45);
+}
+.badge-bajo {
+  background-color: rgba(34, 197, 94, 0.18);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.45);
+}
+
+.log-row-suspicious {
+  background-color: rgba(239, 68, 68, 0.07);
+}
+.log-row-elevated {
+  background-color: rgba(245, 158, 11, 0.12);
+}
+
+.report-paper {
+  background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+  border: 1px solid #334155;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+}
