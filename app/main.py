@@ -177,26 +177,3 @@ async def download_combined_pdf_get():
         },
     )
 
-
-@app.post("/api/reports/pdf/executive")
-async def download_executive_pdf_post(payload: Optional[AnalysisResponse] = None):
-    """Alias endpoint returning the unified Spanish PDF."""
-    return await download_combined_pdf_post(payload)
-
-
-@app.get("/api/reports/pdf/executive")
-async def download_executive_pdf_get():
-    """Alias endpoint returning the unified Spanish PDF."""
-    return await download_combined_pdf_get()
-
-
-@app.post("/api/reports/pdf/technical")
-async def download_technical_pdf_post(payload: Optional[AnalysisResponse] = None):
-    """Alias endpoint returning the unified Spanish PDF."""
-    return await download_combined_pdf_post(payload)
-
-
-@app.get("/api/reports/pdf/technical")
-async def download_technical_pdf_get():
-    """Alias endpoint returning the unified Spanish PDF."""
-    return await download_combined_pdf_get()

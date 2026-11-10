@@ -344,16 +344,6 @@ def generate_combined_pdf(analysis: AnalysisResponse) -> bytes:
     return bytes(pdf.output())
 
 
-def generate_executive_pdf(analysis: AnalysisResponse) -> bytes:
-    """Generate standalone Executive PDF (kept for compatibility; delegates to combined or standalone)."""
-    return generate_combined_pdf(analysis)
-
-
-def generate_technical_pdf(analysis: AnalysisResponse) -> bytes:
-    """Generate standalone Technical PDF (kept for compatibility; delegates to combined or standalone)."""
-    return generate_combined_pdf(analysis)
-
-
 def _render_technical_incident_block(pdf: SIEMReportPDF, inc: IncidentFinding):
     """Render complete technical detail, strict log evidence, justification, and action plan for one incident."""
     if pdf.get_y() > 210:

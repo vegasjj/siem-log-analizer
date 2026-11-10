@@ -6,12 +6,38 @@ import openpyxl
 
 from app.ai_service import _extract_and_parse_json, run_dynamic_siem_analysis
 from app.analyzer import REQUIRED_CATEGORIES
-from app.excel_parser import get_sample_excel_path, parse_siem_excel_bytes
+from app.excel_parser import parse_siem_excel_bytes
 import app.main as main_mod
 from app.main import app
 
 
 client = TestClient(app)
+
+
+def _build_synthetic_siem_xlsx() -> bytes:
+    """Create an in-memory multi-incident SIEM Excel file covering all 6 required detection categories."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "SIEM Export"
+    ws.append([
+        "Log_ID", "Timestamp", "Hostname", "Event_ID", "User", "Source_IP",
+        "Destination", "Log_Source", "Event_Description", "Process_CommandLine", "Result", "Severity",
+    ])
+    # 1. Brute Force + Suspicious Logon + Privilege Escalation (including hidden Informational events)
+    ws.append(["LOG-0001", "2027-05-10 08:00:01", "DC-CORE", "4625", "ACME\\jdoe", "45.33.32.156", "DC-CORE", "Security", "An account failed to log on", "", "Failure", "Warning"])
+    ws.append(["LOG-0002", "2027-05-10 08:00:10", "DC-CORE", "4625", "ACME\\jdoe", "45.33.32.156", "DC-CORE", "Security", "An account failed to log on", "", "Failure", "Warning"])
+    ws.append(["LOG-0003", "2027-05-10 08:00:20", "DC-CORE", "4625", "ACME\\jdoe", "45.33.32.156", "DC-CORE", "Security", "An account failed to log on", "", "Failure", "Warning"])
+    ws.append(["LOG-0004", "2027-05-10 08:00:35", "DC-CORE", "4624", "ACME\\jdoe", "45.33.32.156", "DC-CORE", "Security", "An account was successfully logged on (LogonType=10; RDP)", "", "Success", "Informational"])
+    ws.append(["LOG-0005", "2027-05-10 08:00:40", "DC-CORE", "4672", "ACME\\jdoe", "45.33.32.156", "DC-CORE", "Security", "Special privileges assigned to new logon", "", "Success", "Informational"])
+    # 2. Suspicious Commands & Processes + Lateral Movement + Outbound Exfiltration
+    ws.append(["LOG-0006", "2027-05-10 08:05:00", "APP-NODE1", "4688", "ACME\\jdoe", "10.20.1.15", "", "Security", "A new process has been created", "powershell.exe -EncodedCommand ZABpAHIA", "Success", "High"])
+    ws.append(["LOG-0007", "2027-05-10 08:06:00", "FILE-SRV1", "5145", "ACME\\jdoe", "10.20.1.15", "\\\\FILE-SRV1\\Payroll", "Security", "Detailed file share access", "", "Success", "Informational"])
+    ws.append(["LOG-0008", "2027-05-10 08:07:00", "WS-101", "4688", "ACME\\jdoe", "10.20.1.50", "", "Security", "A new process has been created", "7z.exe a C:\\Users\\Public\\dump.7z C:\\Payroll\\*.xlsx", "Success", "Informational"])
+    ws.append(["LOG-0009", "2027-05-10 08:08:00", "WS-101", "PROXY_ACCESS", "ACME\\jdoe", "10.20.1.50", "198.51.100.200:443", "Proxy", "HTTPS POST outbound", "bytes_out=15728640 uri=/upload/chunk/1", "Allowed", "Warning"])
+
+    buf = BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
 
 
 def test_json_extractor_handles_fences_and_truncation():
@@ -25,87 +51,46 @@ def test_json_extractor_handles_fences_and_truncation():
     assert repaired["global_risk_level"] == "Alto"
 
 
-
 def test_nothing_generated_before_file_upload():
-    """Verify the app does not generate any reports before a file is uploaded."""
+    """Verify the app does not generate any PDF reports before an Excel file is uploaded."""
     main_mod._LATEST_ANALYSIS = None
-    exec_resp = client.get("/api/reports/pdf/executive")
-    assert exec_resp.status_code == 400
-    tech_resp = client.get("/api/reports/pdf/technical")
-    assert tech_resp.status_code == 400
+    pdf_resp = client.get("/api/reports/pdf")
+    assert pdf_resp.status_code == 400
 
 
-def test_dynamic_analysis_on_brand_new_dataset():
-    """Verify a completely new, unseen Excel dataset dynamically generates dashboards and PDFs."""
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "SIEM Export"
-    ws.append([
-        "Log_ID", "Timestamp", "Hostname", "Event_ID", "User", "Source_IP",
-        "Destination", "Log_Source", "Event_Description", "Process_CommandLine", "Result", "Severity"
-    ])
-    # Brand-new unseen IPs (45.33.32.156), users (ACME\jdoe), hosts (PROD-DB99)
-    ws.append(["LOG-9001", "2027-05-10 14:00:01", "PROD-DB99", "4625", "ACME\\jdoe", "45.33.32.156", "PROD-DB99", "Security", "Failed logon", "", "Failure", "Warning"])
-    ws.append(["LOG-9002", "2027-05-10 14:00:10", "PROD-DB99", "4625", "ACME\\jdoe", "45.33.32.156", "PROD-DB99", "Security", "Failed logon", "", "Failure", "Warning"])
-    ws.append(["LOG-9003", "2027-05-10 14:00:20", "PROD-DB99", "4625", "ACME\\jdoe", "45.33.32.156", "PROD-DB99", "Security", "Failed logon", "", "Failure", "Warning"])
-    ws.append(["LOG-9004", "2027-05-10 14:00:35", "PROD-DB99", "4624", "ACME\\jdoe", "45.33.32.156", "PROD-DB99", "Security", "Successful logon", "", "Success", "Informational"])
-    ws.append(["LOG-9005", "2027-05-10 14:01:00", "PROD-DB99", "4688", "ACME\\jdoe", "45.33.32.156", "", "Security", "Process created", "powershell.exe -EncodedCommand ZABpAHIA", "Success", "High"])
-
-    buf = BytesIO()
-    wb.save(buf)
-    buf.seek(0)
-
-    up_resp = client.post(
-        "/api/analyze",
-        files={"file": ("unseen_acme_logs.xlsx", buf, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
-        data={"use_ai": "false"},
-    )
-    assert up_resp.status_code == 200
-    data = up_resp.json()
-    assert data["filename"] == "unseen_acme_logs.xlsx"
-    assert data["metrics"]["total_logs"] == 5
-    assert data["metrics"]["total_incidents"] >= 1
-    assert "PROD-DB99" in data["metrics"]["top_affected_hosts"]
-    assert "45.33.32.156" in data["metrics"]["top_suspicious_ips"]
-
-    # Verify PDF generation works for the brand-new dataset
-    exec_pdf = client.get("/api/reports/pdf/executive")
-    assert exec_pdf.status_code == 200
-    assert exec_pdf.content.startswith(b"%PDF-")
-
-
-def test_dynamic_analysis_on_sample_excel_without_hardcoding():
-    """Verify the generic engine also correlates all categories and hidden Informational logs on the case study file."""
-    sample_path, sample_name = get_sample_excel_path()
-    logs = parse_siem_excel_bytes(sample_path.read_bytes(), filename=sample_name)
+def test_dynamic_analysis_and_unified_pdf_export():
+    """Verify uploading a new Excel dataset dynamically generates the dashboard, categories, and unified PDF."""
+    xlsx_bytes = _build_synthetic_siem_xlsx()
+    logs = parse_siem_excel_bytes(xlsx_bytes, filename="synthetic_siem.xlsx")
     incidents, metrics, exec_rep, tech_rep, _, _ = run_dynamic_siem_analysis(logs)
 
-    assert metrics.total_logs == 715
-    assert len(incidents) >= 5
+    assert metrics.total_logs == 9
+    assert len(incidents) >= 2
 
     detected_categories = {cat for inc in incidents for cat in inc.categories}
     for req_cat in REQUIRED_CATEGORIES:
         assert req_cat in detected_categories, f"Missing required category: {req_cat}"
 
-    # Verify hidden Informational attack events were elevated generically
+    # Verify hidden Informational attack events were elevated dynamically
     elevated_ids = {l.log_id for l in logs if l.elevated_from_informational}
-    for expected_hidden in ["EVT-00123", "EVT-00126", "EVT-00428", "EVT-00528"]:
-        assert expected_hidden in elevated_ids
+    assert {"LOG-0004", "LOG-0005", "LOG-0007", "LOG-0008"}.issubset(elevated_ids)
 
-    # Test upload endpoint and PDF generation
-    with sample_path.open("rb") as f:
-        resp = client.post(
-            "/api/analyze",
-            files={"file": (sample_name, f, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
-            data={"use_ai": "false"},
-        )
-    assert resp.status_code == 200
+    # Verify upload endpoint and unified PDF download (Executive first + Technical second)
+    up_resp = client.post(
+        "/api/analyze",
+        files={"file": ("synthetic_siem.xlsx", BytesIO(xlsx_bytes), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")},
+        data={"use_ai": "false"},
+    )
+    assert up_resp.status_code == 200
+    data = up_resp.json()
+    assert data["filename"] == "synthetic_siem.xlsx"
+    assert data["metrics"]["total_logs"] == 9
+    assert "DC-CORE" in data["metrics"]["top_affected_hosts"]
+    assert "45.33.32.156" in data["metrics"]["top_suspicious_ips"]
 
-    # Verify unified PDF generation (Executive first + Technical second)
     combined_pdf = client.get("/api/reports/pdf")
     assert combined_pdf.status_code == 200
     assert combined_pdf.headers["content-type"] == "application/pdf"
     assert "Informe_SIEM_Ejecutivo_y_Tecnico_SOC_L2_ES.pdf" in combined_pdf.headers.get("content-disposition", "")
     assert combined_pdf.content.startswith(b"%PDF-")
-    assert len(combined_pdf.content) > 6000
-
+    assert len(combined_pdf.content) > 4000

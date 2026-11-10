@@ -1,9 +1,8 @@
 """Excel (.xlsx) ingestion and normalization module for SIEM exports."""
 
 from io import BytesIO
-from pathlib import Path
 import re
-from typing import List, Tuple
+from typing import List
 import xml.etree.ElementTree as ET
 import zipfile
 
@@ -139,18 +138,3 @@ def _parse_xlsx_via_xml(file_bytes: bytes) -> List[List[str]]:
             row_list = [cells_dict.get(i, "") for i in range(max(max_idx + 1, 12))]
             parsed_rows.append(row_list)
         return parsed_rows
-
-
-def get_sample_excel_path() -> Tuple[Path, str]:
-    """Locate the bundled sample SIEM Excel file."""
-    base_dir = Path(__file__).resolve().parent.parent
-    candidates = [
-        base_dir / "plans" / "SOC_L2_Logs_Ampliados_Multiples_Incidentes.xlsx",
-        base_dir / "app" / "sample_data" / "SOC_L2_Logs_Ampliados_Multiples_Incidentes.xlsx",
-    ]
-    for path in candidates:
-        if path.exists():
-            return path, path.name
-    raise FileNotFoundError(
-        "No se encontró el archivo de muestra SOC_L2_Logs_Ampliados_Multiples_Incidentes.xlsx"
-    )
